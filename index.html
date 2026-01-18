@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mega - UDIM Power Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    <style>
+        /* --- THE FIX: Global Box Sizing Reset --- */
+        /* This ensures padding doesn't push content outside boxes */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ink: #2c2c2c;
+            --paper: #ffffff;
+            --highlight: #eeeeee;
+            --accent: #d4d4d4;
+            --sketch-border: 2px solid var(--ink);
+        }
+
+        body {
+            font-family: 'Patrick Hand', cursive;
+            background-color: var(--paper);
+            color: var(--ink);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+
+        /* --- Utility: The "Wobbly" Sketch Look --- */
+        .sketch-box {
+            border: var(--sketch-border);
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; 
+            background: #fff;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+            padding: 20px; /* Padding is now safe due to box-sizing fix */
+        }
+
+        .sketch-btn {
+            display: inline-block;
+            background: var(--ink);
+            color: white;
+            padding: 10px 30px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+            transform: rotate(-1deg);
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .sketch-btn:hover {
+            transform: rotate(1deg) scale(1.02);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px dashed #ccc;
+            margin-bottom: 40px;
+        }
+        .logo { font-size: 2rem; font-weight: bold; }
+        nav a { margin-left: 20px; color: var(--ink); text-decoration: none; font-weight: bold; cursor: pointer;}
+
+        /* --- Hero --- */
+        .hero { text-align: center; margin-bottom: 40px; }
+        h1 { font-size: 3.5rem; margin-bottom: 10px; line-height: 1.1; }
+        .subtitle { font-size: 1.5rem; color: #666; margin-bottom: 30px; }
+
+        /* --- GALLERY SCROLL CONTAINER --- */
+        .gallery-wrapper {
+            position: relative;
+            margin: 40px 0;
+        }
+        
+        .gallery-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 40px;
+            padding: 20px 10px 40px 10px; 
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth; 
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .gallery-scroll::-webkit-scrollbar { 
+            display: none; /* Chrome/Safari/Opera */
+        }
+
+        /* Navigation Arrows */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            font-family: 'Patrick Hand', cursive;
+            font-size: 5rem;
+            color: var(--ink);
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0.4;
+            transition: opacity 0.2s, transform 0.2s;
+            user-select: none;
+        }
+        .nav-arrow:hover {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.1);
+        }
+        .nav-prev { left: -60px; }
+        .nav-next { right: -60px; }
+
+        @media (max-width: 1300px) {
+            .nav-prev { left: 0px; background: rgba(255,255,255,0.8); border-radius: 50%; }
+            .nav-next { right: 0px; background: rgba(255,255,255,0.8); border-radius: 50%; }
+        }
+
+        /* Common Slide Styles */
+        .gallery-slide {
+            flex: 0 0 850px;
+            scroll-snap-align: center;
+        }
+        
+        .gallery-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- CSS MOCKUPS (Stubs) --- */
+        .app-mockup-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr 200px;
+            grid-template-rows: 30px 400px 120px;
+            gap: 10px;
+            padding: 15px;
+            background: #f9f9f9;
+            height: 580px; 
+        }
+
+        .ui-panel { border: 2px solid var(--ink); background: white; padding: 10px; font-size: 0.9rem; overflow: hidden; }
+        .ui-menu { grid-column: 1 / -1; display: flex; gap: 20px; align-items: center; border-bottom: 2px solid var(--ink); height: 100%;}
+        
+        /* Stub 1: 3D View */
+        .stub-1 .ui-tools { grid-column: 1; grid-row: 2; }
+        .stub-1 .ui-viewport { grid-column: 2; grid-row: 2; background: #eee; display: grid; place-items: center; position: relative;}
+        .stub-1 .ui-props { grid-column: 3; grid-row: 2 / 4; }
+        .stub-1 .ui-timeline { grid-column: 1 / 3; grid-row: 3; }
+
+        /* Stub 2: UV View */
+        .stub-2 .ui-viewport { grid-column: 1 / 3; grid-row: 2; background: #ddd; display: grid; place-items: center;}
+        .stub-2 .ui-props { grid-column: 3; grid-row: 2 / 4; }
+        .stub-2 .ui-timeline { grid-column: 1 / 3; grid-row: 3; }
+
+        /* Stub 3: Node Graph */
+        .stub-3 .ui-viewport { grid-column: 1 / -1; grid-row: 2 / 4; background: #333; color: white; display: grid; place-items: center;}
+
+        /* --- Fake UI Elements --- */
+        .fake-3d-model { width: 100px; height: 100px; border: 2px dashed var(--ink); border-radius: 50%; display: grid; place-items: center; }
+        .udim-tile { display: inline-block; width: 50px; height: 50px; border: 1px solid #999; margin-right: 5px; background: white; text-align: center; line-height: 50px;}
+        .node-box { width: 100px; height: 60px; border: 2px solid white; background: transparent; margin: 10px; display: inline-block; text-align: center; line-height: 60px;}
+
+        /* --- Features & Rest --- */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+        .feature-card h3 { border-bottom: 2px solid var(--ink); padding-bottom: 5px; display: inline-block;}
+        /* Ensure text wraps if words are too long */
+        .feature-card p { overflow-wrap: break-word; }
+
+
+        .comparison { margin: 60px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 2px solid var(--ink); padding: 15px; text-align: left; }
+        th { background: #eee; }
+
+        footer { text-align: center; padding: 50px 0; color: #666; border-top: 2px dashed #ccc; }
+
+        /* --- MODAL --- */
+        dialog {
+            border: var(--sketch-border);
+            border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+            font-family: 'Patrick Hand', cursive;
+        }
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px; font-family: inherit; font-size: 1rem;
+            border: 2px solid var(--ink); border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+        }
+        .close-btn { position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            .gallery-slide { flex: 0 0 90vw; } 
+            h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <div class="logo">Mega</div>
+        <nav>
+            <a href="#problem">The Problem</a>
+            <a href="#solution">Megatextures</a>
+            <a onclick="openModal()" style="text-decoration: underline;">Alpha Access</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Stop Waiting on UDIMs.</h1>
+        <p class="subtitle">A lightweight editor & stream processor for 100GB+ texture sets.<br>Powered by a custom Vulkan engine.</p>
+        <button onclick="openModal()" class="sketch-btn">Download Alpha (Win64)</button>
+    </section>
+
+    <div class="gallery-wrapper">
+        
+        <button class="nav-arrow nav-prev" onclick="manualScroll(-1)">&lt;</button>
+        <button class="nav-arrow nav-next" onclick="manualScroll(1)">&gt;</button>
+
+        <div class="gallery-scroll" id="gallery">
+            
+            <div class="sketch-box gallery-slide app-mockup-grid stub-1">
+                <div class="ui-menu"><span>File</span> <span>Edit</span> <span>View</span> <span style="margin-left:auto; font-size:0.8rem;">VRAM: 450MB</span></div>
+                <div class="ui-panel ui-tools"><strong>Tools</strong><br><br>[ O ] Inspect<br>[ / ] Slice<br>[ # ] Grid</div>
+                <div class="ui-viewport">
+                    <div class="fake-3d-model"><span style="font-size:3rem; color:#ccc;">3D</span></div>
+                    <span style="position:absolute; bottom:10px; right:10px; font-size:0.8rem; background:white;">FPS: 144</span>
+                </div>
+                <div class="ui-panel ui-props">
+                    <strong>Properties</strong><hr><p>Albedo: 8k</p><p>Normal: 8k</p>
+                    <div style="border:1px solid black; height:20px; width:100%; background:#eee; margin-top:20px;">
+                        <div style="width:30%; background:#333; height:100%;"></div>
+                    </div><small>Cache</small>
+                </div>
+                <div class="ui-panel ui-timeline">
+                    <strong>UDIM Tiles</strong><br>
+                    <div class="udim-tile">1001</div><div class="udim-tile">1002</div><div class="udim-tile">1003</div>
+                </div>
+            </div>
+
+            <div class="sketch-box gallery-slide app-mockup-grid stub-2">
+                <div class="ui-menu"><span>File</span> <span>Edit</span> <span>View</span> <span style="margin-left:auto; font-size:0.8rem;">VRAM: 460MB</span></div>
+                <div class="ui-viewport">
+                    <div style="font-size:2rem; color:#666;">UV UNWRAP VIEW</div>
+                    <div style="width:80%; height:80%; border:1px dashed #666;"></div>
+                </div>
+                <div class="ui-panel ui-props">
+                    <strong>UV Tools</strong><hr><p>Pack: Fast</p><p>Padding: 4px</p>
+                    <button class="sketch-btn" style="font-size:0.8rem; padding:5px 10px;">Re-Pack</button>
+                </div>
+                <div class="ui-panel ui-timeline">
+                    <strong>UDIM Timeline</strong><br>
+                    <div class="udim-tile">1001</div><div class="udim-tile">1002</div>
+                </div>
+            </div>
+
+            <div class="sketch-box gallery-slide app-mockup-grid stub-3">
+                <div class="ui-menu"><span>File</span> <span>Edit</span> <span>View</span></div>
+                <div class="ui-viewport">
+                    <div class="node-box">Input</div>
+                    <div style="width:50px; border-bottom:2px solid white; display:inline-block; margin-bottom:30px;"></div>
+                    <div class="node-box">Stream</div>
+                    <div style="width:50px; border-bottom:2px solid white; display:inline-block; margin-bottom:30px;"></div>
+                    <div class="node-box">Output</div>
+                    <p style="margin-top:20px; color:#aaa;">Pipeline Graph</p>
+                </div>
+            </div>
+
+            <div class="sketch-box gallery-slide app-mockup-grid stub-1">
+                 <div class="ui-viewport"><div class="fake-3d-model"></div><p>Looped 1</p></div>
+            </div>
+
+        </div>
+    </div>
+
+    <section class="features" id="solution">
+        <div class="feature-card sketch-box">
+            <h3>Virtual Texturing</h3>
+            <p>Don't load 64GB of TIFFs into RAM. We stream only the pixels visible on screen using a hardware-accelerated page table.</p>
+        </div>
+        <div class="feature-card sketch-box">
+            <h3>Instant Feedback</h3>
+            <p>Modify a UDIM in Photoshop? We hot-reload just that tile in &lt;50ms. No "Re-import All" loading bars.</p>
+        </div>
+        <div class="feature-card sketch-box">
+            <h3>Low Spec Friendly</h3>
+            <p>Works on a GTX 1050. We respect your VRAM limits so your main DCC tool (Maya/Blender) doesn't crash.</p>
+        </div>
+    </section>
+
+    <section class="comparison" id="problem">
+        <h2>Why we built this</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Workflow Step</th>
+                    <th>Maya / SP Viewport</th>
+                    <th>Mega</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Load 20x 4k UDIMs</strong></td>
+                    <td>~45 Seconds (Freeze)</td>
+                    <td><strong>Instant</strong> (Virtual)</td>
+                </tr>
+                <tr>
+                    <td><strong>VRAM Cost</strong></td>
+                    <td>~12 GB (Dedicated)</td>
+                    <td><strong>512 MB</strong> (Paged Pool)</td>
+                </tr>
+                <tr>
+                    <td><strong>Frame Rate</strong></td>
+                    <td>Chugs at 20fps</td>
+                    <td>Locked 60fps</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="hero" style="margin-top: 80px;" id="download">
+        <p>Built with <strong>Safehouse Engine</strong>.</p>
+        <p style="font-size:1.2rem; max-width:600px; margin:0 auto 30px;">
+            This is a standalone tech-demonstration of our underlying engine. We are looking for technical artists to break it.
+        </p>
+        <button onclick="openModal()" class="sketch-btn">Request Binary Access &rarr;</button>
+    </section>
+
+    <footer>
+        &copy; 2026 HAS.XYZ. No Cookies. No Tracking.
+    </footer>
+
+</div>
+
+<dialog id="regModal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <h2 style="margin-top:0; border-bottom: 2px solid var(--ink); display:inline-block;">Get Access</h2>
+    <p>We are currently in closed Alpha. Please submit this form to request the download link.</p>
+    
+    <form action="mailto:sales_leads@has.zyx" method="post" enctype="text/plain">
+        <div class="form-group">
+            <label for="name">Name / Handle:</label>
+            <input type="text" id="name" name="Name" required placeholder="Jane Doe">
+        </div>
+        <div class="form-group">
+            <label for="software">Primary Software:</label>
+            <select id="software" name="Software">
+                <option value="Maya">Maya</option>
+                <option value="Blender">Blender</option>
+                <option value="Substance">Substance Painter</option>
+                <option value="Houdini">Houdini</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="notes">What are your specs? (GPU/RAM)</label>
+            <textarea id="notes" name="Specs_Notes" rows="3" placeholder="e.g. GTX 1080, 16GB RAM..."></textarea>
+        </div>
+        <div style="text-align:center; margin-top:20px;">
+            <button type="submit" class="sketch-btn">Send Request (Email)</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    /* --- MODAL LOGIC --- */
+    const modal = document.getElementById('regModal');
+    function openModal() { modal.showModal(); }
+    function closeModal() { modal.close(); }
+    modal.addEventListener('click', (event) => { if (event.target === modal) modal.close(); });
+
+
+    /* --- GALLERY SCROLL LOGIC --- */
+    const gallery = document.getElementById('gallery');
+    let autoScrollSpeed = 1; // Pixels per frame
+    let isUserInteracting = false;
+    let scrollInterval;
+
+    // The Auto-Scroll Loop
+    function startAutoScroll() {
+        if (!scrollInterval) {
+            scrollInterval = setInterval(() => {
+                if (!isUserInteracting) {
+                    gallery.scrollLeft += autoScrollSpeed;
+                    
+                    // Reset to start if we hit the end (Simple loop)
+                    if (gallery.scrollLeft >= (gallery.scrollWidth - gallery.clientWidth - 1)) {
+                         gallery.scrollLeft = 0;
+                    }
+                }
+            }, 20); // 50fps approx
+        }
+    }
+
+    // Stop auto-scroll on hover
+    gallery.addEventListener('mouseenter', () => { isUserInteracting = true; });
+    gallery.addEventListener('mouseleave', () => { isUserInteracting = false; });
+
+    // Arrow Button Logic
+    function manualScroll(direction) {
+        // Pause auto-scroll briefly when user clicks
+        isUserInteracting = true;
+        
+        // Scroll amount: 600px
+        gallery.scrollBy({ left: direction * 600, behavior: 'smooth' });
+
+        // Resume auto-scroll after 2 seconds
+        setTimeout(() => { isUserInteracting = false; }, 2000);
+    }
+
+    // Init
+    startAutoScroll();
+
+</script>
+
+</body>
+</html>
